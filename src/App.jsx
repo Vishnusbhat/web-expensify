@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebaseConfig'; // Adjust the path as needed
 import Navbar from './components/Navbar';
+import { Navigate } from 'react-router-dom';
+
 import HomePage from './components/HomePage'; // Import your pages
 import LoginPage from './components/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute'; // Import ProtectedRoute
