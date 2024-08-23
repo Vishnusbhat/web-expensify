@@ -6,25 +6,41 @@ import { useNavigate } from 'react-router-dom'; // Import useNavigate hook
 
 function HomePage() {
   const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true); // Added loading state
+  const [error, setError] = useState(null); // Added error state
   const navigate = useNavigate(); // Initialize navigate
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        const userDoc = doc(db, 'users', user.uid);
-        const docSnap = await getDoc(userDoc);
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          console.log('Fetching data for user:', user.uid); // Debug: User ID
+          const userDoc = doc(db, 'users', user.uid);
+          const docSnap = await getDoc(userDoc);
 
-        if (docSnap.exists()) {
-          setUserData(docSnap.data());
+          if (docSnap.exists()) {
+            console.log('User data fetched:', docSnap.data()); // Debug: Fetched data
+            setUserData(docSnap.data());
+          } else {
+            console.log('No such document!');
+            setError('No user data found.');
+          }
         } else {
-          console.log('No such document!');
+          console.log('No user is currently logged in.');
+          setError('User not authenticated.');
+          navigate('/login'); // Redirect to login if no user is logged in
         }
+      } catch (error) {
+        console.error('Error fetching user data: ', error);
+        setError('Failed to fetch user data.');
+      } finally {
+        setLoading(false); // Set loading to false once data is fetched or an error occurs
       }
     };
 
     fetchUserData();
-  }, []);
+  }, [navigate]); // Added navigate to dependencies
 
   const handleSignOut = async () => {
     try {
@@ -34,6 +50,14 @@ function HomePage() {
       console.error('Error signing out: ', error);
     }
   };
+
+  if (loading) {
+    return <p>Loading...</p>; // Show loading message while fetching data
+  }
+
+  if (error) {
+    return <p>{error}</p>; // Show error message if there was an error
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-gray-800">
@@ -50,7 +74,7 @@ function HomePage() {
           </button>
         </div>
       ) : (
-        <p>Loading user data...</p>
+        <p>No user data available.</p>
       )}
     </div>
   );
