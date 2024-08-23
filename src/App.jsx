@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebaseConfig'; // Adjust the path as needed
 import Navbar from './components/Navbar';
 import HomePage from './components/HomePage'; // Import your pages
 import LoginPage from './components/LoginPage';
+import ProtectedRoute from './components/ProtectedRoute'; // Import ProtectedRoute
 
 function App() {
   const [user, setUser] = useState(null);
@@ -25,9 +26,19 @@ function App() {
         <Navbar user={user} />
         <div className="p-4">
           <Routes>
-            <Route path="/" element={<HomePage />} />
+            {/* Public Routes */}
             <Route path="/login" element={user ? <Navigate to="/" /> : <LoginPage />} />
-            
+
+            {/* Protected Route */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute user={user}>
+                  <HomePage />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Add more routes as needed */}
           </Routes>
         </div>
