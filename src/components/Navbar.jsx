@@ -1,11 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
-import ProfileModal from './ProfileModal'; // Import the ProfileModal component
+import ProfileModal from './ProfileModal';
 
 function Navbar({ user, userData }) {
   const [showUserInfo, setShowUserInfo] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false); // State for the profile modal
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const dropdownRef = useRef(null);
 
   const toggleUserInfo = () => {
@@ -57,15 +57,8 @@ function Navbar({ user, userData }) {
         {showUserInfo && user && (
           <div
             ref={dropdownRef}
-            className="absolute right-0 mt-2 w-64 bg-white text-black p-4 rounded shadow-lg overflow-hidden z-10"
+            className="absolute right-0 mt-2 w-64 bg-white text-black p-4 rounded shadow-lg overflow-hidden z-10 md:w-80 sm:w-full"
           >
-            {/* {userData.photoURL && (
-              <img
-                src={userData.photoURL}
-                alt="User Photo"
-                className="w-12 h-12 rounded-full mb-2"
-              />
-            )} */}
             <p className="truncate"><strong>Name:</strong> {user.displayName || 'N/A'}</p>
             <p className="truncate"><strong>Email:</strong> {user.email}</p>
             <p className="truncate"><strong>Role:</strong> {userData.role || 'N/A'}</p>
