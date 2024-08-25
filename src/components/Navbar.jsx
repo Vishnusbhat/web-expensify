@@ -6,6 +6,11 @@ import ProfileModal from './ProfileModal';
 function Navbar({ user, userData }) {
   const [showUserInfo, setShowUserInfo] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [role, setRole] = useState(userData.role || '');
+  const [department, setDepartment] = useState(userData.department || '');
+  const [photo, setPhoto] = useState(null); // Handle the photo upload
+  const [profileComplete, setProfileComplete] = useState(!!(userData.role && userData.department));
+
   const dropdownRef = useRef(null);
 
   const toggleUserInfo = () => {
@@ -35,6 +40,20 @@ function Navbar({ user, userData }) {
     };
   }, []);
 
+  const handleSubmit = () => {
+    // Save the role, department, and photo data
+    const updatedData = {
+      role,
+      department,
+      photo,
+    };
+
+    // Logic to save the data, e.g., to Firebase or your backend
+    console.log('Profile updated with:', updatedData);
+
+    setProfileComplete(true);
+  };
+
   return (
     <nav className="bg-blue-600 p-4 text-white flex justify-between items-center relative">
       <div className="text-xl font-bold">Expensify</div>
@@ -61,14 +80,39 @@ function Navbar({ user, userData }) {
           >
             <p className="truncate"><strong>Name:</strong> {user.displayName || 'N/A'}</p>
             <p className="truncate"><strong>Email:</strong> {user.email}</p>
-            <p className="truncate"><strong>Role:</strong> {userData.role || 'N/A'}</p>
-            <p className="truncate"><strong>Department:</strong> {userData.department || 'N/A'}</p>
-            <button
-              onClick={() => setShowProfileModal(true)}
-              className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-4 w-full"
-            >
-              Complete Profile
-            </button>
+            <p className="truncate"><strong>Role:</strong> {profileComplete ? role : 'N/A'}</p>
+            <p className="truncate"><strong>Department:</strong> {profileComplete ? department : 'N/A'}</p>
+
+            {!profileComplete && (
+              <>
+                <input
+                  type="text"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  placeholder="Role"
+                  className="border rounded px-2 py-1 w-full mb-2"
+                />
+                <input
+                  type="text"
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  placeholder="Department"
+                  className="border rounded px-2 py-1 w-full mb-2"
+                />
+                <input
+                  type="file"
+                  onChange={(e) => setPhoto(e.target.files[0])}
+                  className="border rounded px-2 py-1 w-full mb-2"
+                />
+                <button
+                  onClick={handleSubmit}
+                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-4 w-full"
+                >
+                  Submit
+                </button>
+              </>
+            )}
+
             <button
               onClick={handleLogout}
               className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mt-4 w-full"
