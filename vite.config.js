@@ -15,19 +15,19 @@ export default defineConfig({
         theme_color: '#ffffff',
         icons: [
           {
-            src: '/public/icons/bird_2.jpg',
+            src: '/icons/reshot-icon-emergency-fund-X2B65P34NA.svg',
             sizes: '192x192',
-            type: 'image/jpeg'
+            type: 'image/svg+xml'
           },
           {
-            src: '/public/icons/bird_2.jpg',
+            src: '/icons/reshot-icon-emergency-fund-X2B65P34NA.svg',
             sizes: '512x512',
-            type: 'image/jpeg'
+            type: 'image/svg+xml'
           },
           {
-            src: '/public/icons/bird_2.jpg',
+            src: '/icons/reshot-icon-emergency-fund-X2B65P34NA.svg',
             sizes: '512x512',
-            type: 'image/jpeg',
+            type: 'image/svg+xml',
             purpose: 'any maskable'
           }
         ]
