@@ -15,17 +15,17 @@ export default defineConfig({
         theme_color: '#ffffff',
         icons: [
           {
-            src: '/icons/reshot-icon-emergency-fund-X2B65P34NA.svg',
+            src: '/public/icons/reshot-icon-emergency-fund-X2B65P34NA.svg',
             sizes: '192x192',
             type: 'image/svg+xml'
           },
           {
-            src: '/icons/reshot-icon-emergency-fund-X2B65P34NA.svg',
+            src: '/public/icons/reshot-icon-emergency-fund-X2B65P34NA.svg',
             sizes: '512x512',
             type: 'image/svg+xml'
           },
           {
-            src: '/icons/reshot-icon-emergency-fund-X2B65P34NA.svg',
+            src: '/public/icons/reshot-icon-emergency-fund-X2B65P34NA.svg',
             sizes: '512x512',
             type: 'image/svg+xml',
             purpose: 'any maskable'
