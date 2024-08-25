@@ -1,15 +1,20 @@
 import { useEffect, useState, useRef } from 'react';
 import { signOut } from 'firebase/auth';
-import { auth } from '../firebaseConfig';
+import { auth, db, storage } from '../firebaseConfig';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import ProfileModal from './ProfileModal';
 
-function Navbar({ user, userData }) {
+function Navbar({ user }) {
   const [showUserInfo, setShowUserInfo] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [role, setRole] = useState(userData.role || '');
-  const [department, setDepartment] = useState(userData.department || '');
-  const [photo, setPhoto] = useState(null); // Handle the photo upload
-  const [profileComplete, setProfileComplete] = useState(!!(userData.role && userData.department));
+  const [role, setRole] = useState('');
+  const [department, setDepartment] = useState('');
+  const [name, setName] = useState('');
+  const [photo, setPhoto] = useState(null);
+  const [profileComplete, setProfileComplete] = useState(false);
+  const [editProfile, setEditProfile] = useState(false);
+  const [userData, setUserData] = useState(null);
 
   const dropdownRef = useRef(null);
 
@@ -40,29 +45,61 @@ function Navbar({ user, userData }) {
     };
   }, []);
 
-  const handleSubmit = () => {
-    // Save the role, department, and photo data
-    const updatedData = {
-      role,
-      department,
-      photo,
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (user) {
+        const userRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(userRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setRole(data.role || '');
+          setDepartment(data.department || '');
+          setName(data.name || '');
+          setUserData(data);
+          setProfileComplete(!!(data.role && data.department && data.name));
+        }
+      }
     };
 
-    // Logic to save the data, e.g., to Firebase or your backend
-    console.log('Profile updated with:', updatedData);
+    fetchUserData();
+  }, [user]);
 
-    setProfileComplete(true);
+  const handleSubmit = async () => {
+    try {
+      const updatedData = {
+        role,
+        department,
+        name,
+      };
+
+      if (photo) {
+        const photoRef = ref(storage, `user_photos/${user.uid}/${photo.name}`);
+        await uploadBytes(photoRef, photo);
+        const photoURL = await getDownloadURL(photoRef);
+        updatedData.photoURL = photoURL;
+      }
+
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, updatedData);
+
+      console.log('Profile updated with:', updatedData);
+      setProfileComplete(true);
+      setEditProfile(false); // Hide the form after submission
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    }
   };
 
   return (
     <nav className="bg-blue-600 p-4 text-white flex justify-between items-center relative">
       <div className="text-xl font-bold">Expensify</div>
       <div className="relative">
-        {userData.photoURL ? (
+        {userData?.photoURL ? (
           <img
             src={userData.photoURL}
             alt="User Photo"
-            className="w-12 h-12 rounded-full cursor-pointer"
+            className="w-12 h-12 rounded-full cursor-pointer border-2 border-white"
             onClick={toggleUserInfo}
           />
         ) : (
@@ -78,13 +115,29 @@ function Navbar({ user, userData }) {
             ref={dropdownRef}
             className="absolute right-0 mt-2 w-64 bg-white text-black p-4 rounded shadow-lg overflow-hidden z-10 md:w-80 sm:w-full"
           >
-            <p className="truncate"><strong>Name:</strong> {user.displayName || 'N/A'}</p>
+            <p className="truncate"><strong>Name:</strong> {name || 'N/A'}</p>
             <p className="truncate"><strong>Email:</strong> {user.email}</p>
-            <p className="truncate"><strong>Role:</strong> {profileComplete ? role : 'N/A'}</p>
-            <p className="truncate"><strong>Department:</strong> {profileComplete ? department : 'N/A'}</p>
+            <p className="truncate"><strong>Role:</strong> {role || 'N/A'}</p>
+            <p className="truncate"><strong>Department:</strong> {department || 'N/A'}</p>
 
-            {!profileComplete && (
+            {profileComplete && (
+              <button
+                onClick={() => setEditProfile(true)}
+                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-4 w-full"
+              >
+                Update Profile
+              </button>
+            )}
+
+            {editProfile && (
               <>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Name"
+                  className="border rounded px-2 py-1 w-full mb-2"
+                />
                 <input
                   type="text"
                   value={role}
@@ -122,7 +175,7 @@ function Navbar({ user, userData }) {
           </div>
         )}
       </div>
-      {showProfileModal && <ProfileModal onClose={() => setShowProfileModal(false)} userData={userData} />}
+      {showProfileModal && <ProfileModal onClose={() => setShowProfileModal(false)} />}
     </nav>
   );
 }

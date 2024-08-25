@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
+import './App.css';
 import { auth } from './firebaseConfig';
 import Navbar from './components/Navbar';
 import HomePage from './components/HomePage';
 import LoginPage from './components/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import CalendarPage from './components/CalendarPage'; // Import the CalendarPage component
 import { fetchUserData } from './components/userService'; // Import the fetchUserData function
 
 function App() {
@@ -37,7 +39,15 @@ function App() {
               path="/"
               element={
                 <ProtectedRoute user={user}>
-                  <HomePage />
+                  <HomePage userData={userData} /> {/* Pass userData to HomePage */}
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/calendar"
+              element={
+                <ProtectedRoute user={user}>
+                  <CalendarPage />
                 </ProtectedRoute>
               }
             />
