@@ -1,81 +1,83 @@
 import { useState, useEffect } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../firebaseConfig'; // Import Firebase config
+import { auth, db } from '../firebaseConfig'; 
 import { signOut } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate hook
+import { useNavigate } from 'react-router-dom'; 
 
 function HomePage() {
   const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(true); // Added loading state
-  const [error, setError] = useState(null); // Added error state
-  const navigate = useNavigate(); // Initialize navigate
+  const [loading, setLoading] = useState(true); 
+  const [error, setError] = useState(null); 
+  const navigate = useNavigate(); 
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const user = auth.currentUser;
         if (user) {
-          console.log('Fetching data for user:', user.uid); // Debug: User ID
           const userDoc = doc(db, 'users', user.uid);
           const docSnap = await getDoc(userDoc);
 
           if (docSnap.exists()) {
-            console.log('User data fetched:', docSnap.data()); // Debug: Fetched data
             setUserData(docSnap.data());
           } else {
-            console.log('No such document!');
             setError('No user data found.');
           }
         } else {
-          console.log('No user is currently logged in.');
           setError('User not authenticated.');
-          navigate('/login'); // Redirect to login if no user is logged in
+          navigate('/login');
         }
       } catch (error) {
-        console.error('Error fetching user data: ', error);
         setError('Failed to fetch user data.');
       } finally {
-        setLoading(false); // Set loading to false once data is fetched or an error occurs
+        setLoading(false);
       }
     };
 
     fetchUserData();
-  }, [navigate]); // Added navigate to dependencies
+  }, [navigate]);
 
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      navigate('/login'); // Redirect to login page after sign-out
+      navigate('/login');
     } catch (error) {
       console.error('Error signing out: ', error);
     }
   };
 
   if (loading) {
-    return <p>Loading...</p>; // Show loading message while fetching data
+    return <p>Loading...</p>;
   }
 
   if (error) {
-    return <p>{error}</p>; // Show error message if there was an error
+    return <p>{error}</p>;
   }
 
+  const cardData = [
+    { title: 'Inventory', route: '/inventory' },
+    { title: 'Drives', route: '/drives' },
+    { title: 'Calendar', route: '/calendar' },
+    { title: 'Daily Points', route: '/daily-points' },
+    { title: 'Apply for Leave', route: '/apply-leave' },
+    { title: 'Attendance', route: '/attendance' },
+  ];
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-gray-800">
-      <h1 className="text-4xl font-bold mb-4">Home Page</h1>
-      {userData ? (
-        <div className="p-6 bg-white rounded-lg shadow-lg">
-          <h2 className="text-2xl font-semibold mb-2">Welcome, {userData.name}</h2>
-          <p><strong>Role:</strong> {userData.role}</p>
-          <button
-            onClick={handleSignOut}
-            className="mt-4 bg-red-500 text-white font-bold py-2 px-4 rounded hover:bg-red-600 transition-colors"
-          >
-            Sign Out
-          </button>
+    <div className=" min-h-screen w-full">
+      <div className="flex flex-col items-center justify-start mt-6 px-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-6xl">
+          {cardData.map((card, index) => (
+            <button
+              key={index}
+              className="p-4 sm:p-6 lg:p-8 h-24 sm:h-28 lg:h-32 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors text-center"
+              onClick={() => navigate(card.route)}
+            >
+              {card.title}
+            </button>
+          ))}
         </div>
-      ) : (
-        <p>No user data available.</p>
-      )}
+      </div>
     </div>
   );
 }
