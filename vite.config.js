@@ -9,9 +9,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Vite + React App',
-        short_name: 'ViteReact',
-        description: 'A Vite + React application',
+        name: 'Expensify',
+        short_name: 'Expensify',
+        description: 'TPO Management App.',
         theme_color: '#ffffff',
         icons: [
           {
