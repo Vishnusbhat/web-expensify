@@ -47,18 +47,27 @@ function Navbar({ user }) {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (user) {
-        const userRef = doc(db, 'users', user.uid);
-        const docSnap = await getDoc(userRef);
+      try {
+        if (user) {
+          const userRef = doc(db, 'users', user.uid);
+          const docSnap = await getDoc(userRef);
 
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setRole(data.role || '');
-          setDepartment(data.department || '');
-          setName(data.name || '');
-          setUserData(data);
-          setProfileComplete(!!(data.role && data.department && data.name));
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setRole(data.role || '');
+            setDepartment(data.department || '');
+            setName(data.name || '');
+            setUserData(data);
+            setProfileComplete(!!(data.role && data.department && data.name));
+            console.log('Profile data:', data);
+          } else {
+            console.log('No such document!');
+          }
+        } else {
+          console.log('No user found');
         }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
       }
     };
 
@@ -83,8 +92,15 @@ function Navbar({ user }) {
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, updatedData);
 
+      // Fetch the updated user data to refresh the state
+      const updatedUserSnap = await getDoc(userRef);
+      if (updatedUserSnap.exists()) {
+        const updatedUserData = updatedUserSnap.data();
+        setUserData(updatedUserData);
+        setProfileComplete(!!(updatedUserData.role && updatedUserData.department && updatedUserData.name));
+      }
+
       console.log('Profile updated with:', updatedData);
-      setProfileComplete(true);
       setEditProfile(false); // Hide the form after submission
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -120,7 +136,16 @@ function Navbar({ user }) {
             <p className="truncate"><strong>Role:</strong> {role || 'N/A'}</p>
             <p className="truncate"><strong>Department:</strong> {department || 'N/A'}</p>
 
-            {profileComplete && (
+            {!profileComplete && !editProfile && (
+              <button
+                onClick={() => setEditProfile(true)}
+                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-4 w-full"
+              >
+                Complete Profile
+              </button>
+            )}
+
+            {profileComplete && !editProfile && (
               <button
                 onClick={() => setEditProfile(true)}
                 className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-4 w-full"
