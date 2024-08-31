@@ -6,6 +6,7 @@ import { auth } from './firebaseConfig';
 import Navbar from './components/Navbar';
 import HomePage from './components/HomePage';
 import LoginPage from './components/LoginPage';
+import DriveDetails from './components/DriveDetails';
 import ProtectedRoute from './components/ProtectedRoute';
 import CalendarPage from './components/CalendarPage'; // Import the CalendarPage component
 import { fetchUserData } from './components/userService'; // Import the fetchUserData function
@@ -48,6 +49,14 @@ function App() {
               element={
                 <ProtectedRoute user={user}>
                   <CalendarPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/drives"
+              element={
+                <ProtectedRoute user={user}>
+                  < DriveDetails/>
                 </ProtectedRoute>
               }
             />

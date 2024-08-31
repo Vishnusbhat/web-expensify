@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth, db, storage } from '../firebaseConfig';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import ProfileModal from './ProfileModal';
 
@@ -52,17 +52,24 @@ function Navbar({ user }) {
           const userRef = doc(db, 'users', user.uid);
           const docSnap = await getDoc(userRef);
 
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            setRole(data.role || '');
-            setDepartment(data.department || '');
-            setName(data.name || '');
-            setUserData(data);
-            setProfileComplete(!!(data.role && data.department && data.name));
-            console.log('Profile data:', data);
-          } else {
-            console.log('No such document!');
+          if (!docSnap.exists()) {
+            // Create a new user document if it doesn't exist
+            await setDoc(userRef, {
+              name: user.displayName || '',
+              email: user.email || '',
+              role: '',
+              department: '',
+              photoURL: user.photoURL || '',
+            });
           }
+
+          const data = docSnap.data();
+          setRole(data.role || '');
+          setDepartment(data.department || '');
+          setName(data.name || '');
+          setUserData(data);
+          setProfileComplete(!!(data.role && data.department && data.name));
+          console.log('Profile data:', data);
         } else {
           console.log('No user found');
         }
