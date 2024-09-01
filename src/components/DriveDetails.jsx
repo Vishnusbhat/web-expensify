@@ -18,6 +18,7 @@ function DriveDetails() {
   const [userDetails, setUserDetails] = useState({});
   const taskOptionsRef = useRef(null);
   const userListRef = useRef(null);
+  const modalRef = useRef(null);
 
   useEffect(() => {
     const auth = getAuth();
@@ -72,16 +73,23 @@ function DriveDetails() {
   const handleNewTaskSubmit = async () => {
     if (newTask.trim() === '') return;
 
+    if (!selectedDrive) {
+      console.error('No drive selected');
+      return;
+    }
+
     try {
       const driveDocRef = doc(db, 'events', selectedDrive.id);
       const driveDoc = await getDoc(driveDocRef);
       const driveData = driveDoc.data();
 
-      const updatedTasks = [...driveData.tasks, { task: newTask, assignedUsers: [] }];
+      const updatedTasks = Array.isArray(driveData.tasks) ? [...driveData.tasks] : [];
+      updatedTasks.push({ task: newTask, assignedUsers: [] });
+
       await updateDoc(driveDocRef, { tasks: updatedTasks });
 
       setTasks(updatedTasks);
-      setNewTask(''); 
+      setNewTask('');
     } catch (error) {
       console.error('Error adding new task:', error);
     }
@@ -91,7 +99,7 @@ function DriveDetails() {
     setShowTaskOptions(showTaskOptions === index ? null : index);
   };
 
-  const handleTaskAction = async (taskIndex, action) => {
+  const handleTaskClick = async (taskIndex) => {
     try {
       if (!selectedDrive) return;
 
@@ -99,15 +107,14 @@ function DriveDetails() {
       const driveDoc = await getDoc(driveDocRef);
       const driveData = driveDoc.data();
       const updatedTasks = [...driveData.tasks];
+      const task = updatedTasks[taskIndex];
 
-      if (action === 'select') {
-        if (!updatedTasks[taskIndex].assignedUsers.includes(currentUserId)) {
-          updatedTasks[taskIndex].assignedUsers.push(currentUserId);
-        }
-      } else if (action === 'leave') {
-        updatedTasks[taskIndex].assignedUsers = updatedTasks[taskIndex].assignedUsers.filter(
-          (userId) => userId !== currentUserId
-        );
+      if (task.assignedUsers.includes(currentUserId)) {
+        // Leave the task
+        task.assignedUsers = task.assignedUsers.filter(userId => userId !== currentUserId);
+      } else {
+        // Select the task
+        task.assignedUsers.push(currentUserId);
       }
 
       await updateDoc(driveDocRef, { tasks: updatedTasks });
@@ -119,7 +126,7 @@ function DriveDetails() {
 
   const handleTaskEdit = (index) => {
     setEditTaskIndex(index);
-    setEditTaskText(tasks[index].task); 
+    setEditTaskText(tasks[index].task);
   };
 
   const handleTaskEditSubmit = async () => {
@@ -130,14 +137,14 @@ function DriveDetails() {
       const driveDoc = await getDoc(driveDocRef);
       const driveData = driveDoc.data();
 
-      const updatedTasks = [...driveData.tasks];
+      const updatedTasks = Array.isArray(driveData.tasks) ? [...driveData.tasks] : [];
       updatedTasks[editTaskIndex].task = editTaskText;
 
       await updateDoc(driveDocRef, { tasks: updatedTasks });
 
       setTasks(updatedTasks);
-      setEditTaskIndex(null); 
-      setEditTaskText(''); 
+      setEditTaskIndex(null);
+      setEditTaskText('');
     } catch (error) {
       console.error('Error updating task:', error);
     }
@@ -184,16 +191,22 @@ function DriveDetails() {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target)
+      ) {
+        setShowForm(false);
+      }
+      if (
         taskOptionsRef.current &&
         !taskOptionsRef.current.contains(event.target)
       ) {
-        setShowTaskOptions(null); 
+        setShowTaskOptions(null);
       }
       if (
         userListRef.current &&
         !userListRef.current.contains(event.target)
       ) {
-        setShowUserList(null); 
+        setShowUserList(null);
       }
     };
 
@@ -219,12 +232,12 @@ function DriveDetails() {
           ))}
         </ul>
       ) : (
-        <p>No "Drive" events found.</p>
+        <p>No Drives found.</p>
       )}
 
       {showForm && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
-          <div className="bg-white p-4 rounded-lg shadow-lg max-w-md w-full">
+          <div ref={modalRef} className="bg-white p-4 rounded-lg shadow-lg max-w-md w-full">
             <h4 className="text-xl mb-4">Tasks for {selectedDrive.task}</h4>
             <div className="mb-4">
               <input
@@ -242,105 +255,105 @@ function DriveDetails() {
               </button>
             </div>
 
-            <h4 className="text-lg mb-4">Current Tasks</h4>
+            <h4 className="text-lg mb-4">Task List</h4>
             {tasks.length > 0 ? (
-              <ul className="list-disc pl-5 space-y-2">
+              <ul className="space-y-2">
                 {tasks.map((task, index) => {
+                  const userCount = task.assignedUsers.length;
                   const isUserAssigned = task.assignedUsers.includes(currentUserId);
-
                   return (
                     <li
                       key={index}
-                      className="bg-gray-100 p-2 rounded shadow-md flex justify-between items-center relative"
+                      className={`p-2 rounded-lg shadow-md flex justify-between items-center ${
+                        isUserAssigned ? 'bg-green-100' : 'bg-gray-100'
+                      } cursor-pointer`}
+                      onClick={() => handleTaskClick(index)}
                     >
-                      <span className="flex-1">{task.task}</span>
-                      <div className="flex items-center space-x-4">
-                        {!isUserAssigned ? (
+                      {editTaskIndex === index ? (
+                        <div className="flex items-center w-full space-x-2">
+                          <input
+                            type="text"
+                            value={editTaskText}
+                            onChange={(e) => setEditTaskText(e.target.value)}
+                            className="p-2 border border-gray-300 rounded-lg w-full"
+                          />
                           <button
-                            onClick={() => handleTaskAction(index, 'select')}
-                            className="bg-green-500 text-white py-1 px-2 rounded-lg"
+                            onClick={handleTaskEditSubmit}
+                            className="bg-blue-500 text-white py-1 px-3 rounded-lg"
                           >
-                            Select Task
+                            Save
                           </button>
-                        ) : (
-                          <button
-                            onClick={() => handleTaskAction(index, 'leave')}
-                            className="bg-red-500 text-white py-1 px-2 rounded-lg"
-                          >
-                            Leave Task
-                          </button>
-                        )}
+                        </div>
+                      ) : (
+                        <>
+                          <span>{task.task}</span>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleUserIconClick(index)}
+                              className="text-gray-500 flex items-center"
+                            >
+                              <FaUser />
+                              <span className="ml-1 text-sm">({userCount})</span>
+                            </button>
+                            <button
+                              onClick={() => handleTaskOptionsToggle(index)}
+                              className="text-gray-500"
+                            >
+                              <FaEllipsisV />
+                            </button>
+                          </div>
+                        </>
+                      )}
 
-                        <FaUser
-                          className="cursor-pointer mr-2"
-                          onClick={() => handleUserIconClick(index)}
-                        />
-                        <span>{task.assignedUsers.length}</span>
+                      {showTaskOptions === index && (
+                        <div
+                          ref={taskOptionsRef}
+                          className="absolute bg-white border border-gray-300 rounded-lg shadow-lg p-2 z-10"
+                        >
+                          <ul className="space-y-1">
+                            <li>
+                              <button
+                                onClick={() => handleTaskEdit(index)}
+                                className="w-full text-left"
+                              >
+                                Edit Task
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                onClick={() => handleDeleteTask(index)}
+                                className="w-full text-left"
+                              >
+                                Delete Task
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
+                      )}
 
-                        {showUserList === index && userDetails[index] && (
-                          <div
-                            className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10"
-                            ref={userListRef}
-                          >
+                      {showUserList === index && (
+                        <div
+                          ref={userListRef}
+                          className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg p-2 z-10"
+                        >
+                          {userDetails[index] && userDetails[index].length > 0 ? (
                             <ul>
-                              {userDetails[index].map((user, userIndex) => (
-                                <li key={userIndex} className="border-b last:border-b-0 py-1">
-                                  {user.name}
-                                </li>
+                              {userDetails[index].map((user, idx) => (
+                                <li key={idx}>{user.name}</li>
                               ))}
                             </ul>
-                          </div>
-                        )}
-
-                        <FaEllipsisV
-                          className="cursor-pointer ml-4"
-                          onClick={() => handleTaskOptionsToggle(index)}
-                        />
-                        {showTaskOptions === index && (
-                          <div
-                            className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg"
-                            ref={taskOptionsRef}
-                          >
-                            {editTaskIndex === index ? (
-                              <button
-                                onClick={handleTaskEditSubmit}
-                                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                              >
-                                Save Task
-                              </button>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={() => handleTaskEdit(index)}
-                                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                                >
-                                  Edit Task
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteTask(index)}
-                                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                                >
-                                  Delete Task
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                          ) : (
+                            <p>None</p>
+                          )}
+                        </div>
+                      )}
                     </li>
                   );
                 })}
               </ul>
             ) : (
-              <p>No tasks found.</p>
+              <p>No tasks added yet.</p>
             )}
-
-            <button
-              onClick={() => setShowForm(false)}
-              className="bg-red-500 text-white py-2 px-4 rounded-lg mt-4 w-full"
-            >
-              Close
-            </button>
           </div>
         </div>
       )}
@@ -349,3 +362,4 @@ function DriveDetails() {
 }
 
 export default DriveDetails;
+
